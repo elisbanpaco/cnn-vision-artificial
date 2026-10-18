@@ -1,0 +1,39 @@
+# Dataset original y copias preparadas (incluye archivos comprimidos)
+/dataset/
+
+# Resultados, checkpoints y gráficas generadas
+/artifacts/
+*.pt
+*.pth
+*.onnx
+
+# Entornos y cachés de Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+build/
+dist/
+*.egg-info/
+
+# Credenciales y configuración local
+.env
+.env.*
+!.env.example
+.aws/
+
+# Directorios locales de agentes de IA
+.agents/
+.codex/
+
+# Archivos temporales del editor y del sistema
+.ipynb_checkpoints/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
