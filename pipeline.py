@@ -1,4 +1,4 @@
-"""Orquesta preparación e inspección; --smoke prueba el flujo y --train entrena."""
+"""Orquesta el experimento; --ui abre la interfaz de predicción con un modelo guardado."""
 import argparse
 import math
 from datetime import datetime
@@ -39,13 +39,31 @@ def main():
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--device", choices=["auto", "cpu", "cuda"], default="auto")
     parser.add_argument("--image", type=Path, help="Predicción opcional al terminar --train o --smoke.")
+    parser.add_argument("--ui", action="store_true", help="Abre la interfaz 07; sola reutiliza un modelo guardado.")
+    parser.add_argument("--checkpoint", type=Path, help="Modelo .pt para --ui sin entrenamiento.")
+    parser.add_argument("--port", type=positive_int, default=7860, help="Puerto de la interfaz local (7860).")
     args = parser.parse_args()
+    if args.port > 65535:
+        parser.error("--port debe estar entre 1 y 65535")
+    if args.checkpoint and (not args.ui or args.train or args.smoke):
+        parser.error("--checkpoint requiere --ui sin --train ni --smoke")
     if args.image and not (args.train or args.smoke):
         parser.error("--image requiere --train o --smoke; para un modelo existente usa src/06_predict.py")
     if args.lr <= 0 or not math.isfinite(args.lr):
         parser.error("--lr debe ser positivo y finito")
     if args.image and not args.image.is_file():
         parser.error(f"No existe la imagen: {args.image}")
+
+    def script(name, *arguments):
+        run_step([sys.executable, ROOT / "src" / name, *arguments])
+
+    if args.ui and not (args.train or args.smoke):
+        checkpoint = (args.checkpoint or ROOT / "artifacts/default/best_model.pt").resolve()
+        if not checkpoint.is_file():
+            parser.error(f"No existe el modelo: {checkpoint}. Indica --checkpoint /ruta/best_model.pt")
+        print("\n[7] Interfaz de predicción con el modelo guardado", flush=True)
+        script("07_predict_ui.py", "--checkpoint", checkpoint, "--device", args.device, "--port", args.port)
+        return
     output = (args.output or ROOT / "artifacts" / datetime.now().strftime("run_%Y%m%d_%H%M%S_%f")).resolve()
     data = args.data.resolve()
     source = args.source.resolve()
@@ -59,11 +77,9 @@ def main():
     if data.exists() and any(data.iterdir()) and not (data / "manifest.json").is_file():
         parser.error(f"Dataset incompleto: {data}. Revisa la preparación antes de continuar.")
 
-    def script(name, *arguments):
-        run_step([sys.executable, ROOT / "src" / name, *arguments])
-
     print("=== PIPELINE CNN: GATOS Y PERROS ===", flush=True)
     print(f"Resultados: {output}", flush=True)
+
     print("\n[1] Preparación del dataset", flush=True)
     if (data / "manifest.json").is_file():
         print("Dataset preparado: se reutiliza y se verificará en el paso 2.", flush=True)
@@ -99,6 +115,9 @@ def main():
     if args.smoke:
         print("Prueba técnica: las métricas no representan rendimiento final.", flush=True)
     print(f"Resultados: {output}", flush=True)
+    if args.ui:
+        print("\n[7] Interfaz de predicción", flush=True)
+        script("07_predict_ui.py", "--checkpoint", checkpoint, "--device", args.device, "--port", args.port)
 
 
 if __name__ == "__main__":
