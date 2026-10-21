@@ -37,3 +37,5 @@ dist/
 *.swo
 .DS_Store
 Thumbs.db
+
+detect-cat-dog-cnn-resultados.json
