@@ -49,6 +49,8 @@ def main():
     parser.add_argument("--epochs", type=positive_int, default=20)
     parser.add_argument("--batch-size", type=positive_int, default=32)
     parser.add_argument("--lr", type=float, default=0.001)
+    parser.add_argument("--weight-decay", type=float, default=1e-4,
+                        help="Regularización de Adam (por defecto: 1e-4; 0 la desactiva).")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--device", choices=["auto", "cpu", "cuda"], default="auto")
     parser.add_argument("--max-batches", type=positive_int,
@@ -56,6 +58,8 @@ def main():
     args = parser.parse_args()
     if not math.isfinite(args.lr) or args.lr <= 0:
         parser.error("--lr debe ser positivo y finito")
+    if not math.isfinite(args.weight_decay) or args.weight_decay < 0:
+        parser.error("--weight-decay debe ser no negativo y finito")
     device = select_device(args.device)
     seed_everything(args.seed)
     train = load_dataset(args.data, "train")
@@ -67,13 +71,14 @@ def main():
               for key, value in vars(args).items()}
     config.update(device_used=str(device), smoke_test=args.max_batches is not None,
                   class_to_idx=train.class_to_idx,
-                  architecture="conv32-conv64-fc128-dropout0.5-fc2", input_size=[3, 224, 224])
+                  architecture="conv32-conv64-conv128-conv256-bn-gap-fc128-dropout0.5-fc2",
+                  input_size=[3, 224, 224])
     write_json(output / "config.json", config)
     print(f"Dispositivo: {device}; train={len(train)}, val={len(val)}", flush=True)
     if config["smoke_test"]:
         print("PRUEBA TÉCNICA: las métricas no representan rendimiento final.", flush=True)
     model = CatDogCNN().to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     history, best_loss = [], float("inf")
     with (output / "history.csv").open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=["epoch", "train_loss", "train_accuracy", "val_loss", "val_accuracy"])

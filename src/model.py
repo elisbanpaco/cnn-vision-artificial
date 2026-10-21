@@ -9,18 +9,23 @@ class CatDogCNN(nn.Module):
     def __init__(self):
         super().__init__()
 
-        # Primeras capas convolucionales y de pooling
+        # Cuatro bloques convolucionales con normalización y reducción espacial.
         self.features = nn.Sequential(
-            # convolución de 3 a 32 canales, kernel_size=5, ReLU y MaxPool2d con tamaño de kernel 2
-            nn.Conv2d(3, 32, kernel_size=5), nn.ReLU(), nn.MaxPool2d(2),
-            # convolución de 32 a 64 canales, kernel_size=5, ReLU y MaxPool2d con tamaño de kernel 2
-            nn.Conv2d(32, 64, kernel_size=5), nn.ReLU(), nn.MaxPool2d(2),
+            nn.Conv2d(3, 32, kernel_size=3, padding=1, bias=False),
+            nn.BatchNorm2d(32), nn.ReLU(), nn.MaxPool2d(2),
+            nn.Conv2d(32, 64, kernel_size=3, padding=1, bias=False),
+            nn.BatchNorm2d(64), nn.ReLU(), nn.MaxPool2d(2),
+            nn.Conv2d(64, 128, kernel_size=3, padding=1, bias=False),
+            nn.BatchNorm2d(128), nn.ReLU(), nn.MaxPool2d(2),
+            nn.Conv2d(128, 256, kernel_size=3, padding=1, bias=False),
+            nn.BatchNorm2d(256), nn.ReLU(), nn.MaxPool2d(2),
+            nn.AdaptiveAvgPool2d(1),
         )
 
         # Capa totalmente conectada para clasificación binaria
         self.classifier = nn.Sequential(
-            # aplanamiento de la salida de las capas convolucionales, capa lineal de 64*53*53 a 128, ReLU, Dropout y capa lineal de 128 a 2
-            nn.Flatten(), nn.Linear(64 * 53 * 53, 128), nn.ReLU(),
+            # El pooling global deja una característica por cada uno de los 256 canales.
+            nn.Flatten(), nn.Linear(256, 128), nn.ReLU(),
             # Dropout con probabilidad de 0.5 para evitar sobreajuste
             nn.Dropout(0.5), nn.Linear(128, 2),
         )
