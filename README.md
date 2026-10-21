@@ -162,6 +162,32 @@ predicha junto con las probabilidades softmax de `cat` y `dog`.
 Acepta `--checkpoint artifacts/experimento_2/best_model.pt` y `--device cpu`.
 Las probabilidades no son una medida calibrada de certeza.
 
+### 07. Interfaz para arrastrar una imagen
+
+Abre la interfaz con un modelo ya entrenado, sin preparar datos ni entrenar:
+
+```bash
+uv run python pipeline.py --ui --checkpoint /ruta/best_model.pt
+```
+
+Visita **http://127.0.0.1:7860**, arrastra una foto y pulsa **Clasificar imagen**.
+Muestra la foto, la clase predicha y las probabilidades de gato y perro.
+El modelo se carga una sola vez y se utiliza el mismo preprocesamiento de `src/data.py`.
+Acepta checkpoints generados con la arquitectura actual, incluidos los de `main.ipynb`.
+Si entrenaste en Kaggle, descarga `best_model.pt` y pasa su ruta con `--checkpoint`.
+
+También puedes ejecutar el paso 07 directamente o abrirlo al terminar el entrenamiento:
+
+```bash
+uv run python src/07_predict_ui.py --checkpoint /ruta/best_model.pt
+uv run python pipeline.py --train --ui --epochs 20
+```
+
+Usa `--port 7861` si el puerto está ocupado, o `--device cpu` para usar CPU.
+La interfaz funciona localmente, no requiere dependencias adicionales y no modifica
+el checkpoint ni guarda las imágenes subidas. Admite imágenes de hasta 10 MB.
+Detén el servidor con `Ctrl+C`. Los modelos de prueba técnica se identifican en pantalla.
+
 ## Prueba corta del flujo
 
 Comprueba que los scripts funcionan sin realizar el entrenamiento completo:
@@ -190,3 +216,5 @@ Referencias: [ImageFolder](https://docs.pytorch.org/vision/stable/generated/torc
 y [guardado de modelos de PyTorch](https://docs.pytorch.org/tutorials/beginner/saving_loading_models.html).
 
 Dataset original: Se uso el dataset de [Kaggle Dogs vs. Cats](https://www.kaggle.com/competitions/dogs-vs-cats/data), solo de descargo la parte train/ la cual fue dividida en train/ val/ test/ (70/15/15) con una semilla 42.
+
+También se agregó el [cuaderno en Kaggle](https://www.kaggle.com/code/kiyotaka35/detect-cat-dog-cnn) para entrenar el modelo en la nube; su copia local es `detect-cat-dog-cnn.ipynb` y ejecuta todo el pipeline de `src/` paso a paso. Si ya tiene el dataset procesado 70/15/15, puede ejecutar el cuaderno `cats-dogs-cnn-simple.ipynb`, que solo entrena y evalúa el modelo de manera más rápida y simple.
